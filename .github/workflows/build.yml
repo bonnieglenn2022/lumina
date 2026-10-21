@@ -1,0 +1,55 @@
+# Builds the iPhone app, widgets, Apple Watch app and complication on a cloud Mac
+# after every push. No Apple account or signing needed.
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build for iPhone and Apple Watch simulators
+        run: |
+          xcodebuild build \
+            -project Lumina.xcodeproj \
+            -scheme Lumina \
+            -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            > build.log 2>&1 || {
+              echo "::group::Build errors"
+              grep -E "(error|fatal error):" build.log | sort -u | head -80
+              echo "::endgroup::"
+              tail -40 build.log
+              exit 1
+            }
+          echo "Build succeeded"
+          grep -cE "warning:" build.log | xargs echo "Warnings:"
+
+      - name: Keep the build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
+          retention-days: 7

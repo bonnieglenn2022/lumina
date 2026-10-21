@@ -1,0 +1,172 @@
+# Lumina — XcodeGen project spec.
+# Run ./setup.sh (recommended) or `xcodegen generate` to create Lumina.xcodeproj.
+name: Lumina
+options:
+  bundleIdPrefix: com.luminamanifestation
+  deploymentTarget:
+    iOS: "17.0"
+    watchOS: "10.0"
+  createIntermediateGroups: true
+  developmentLanguage: en
+
+settings:
+  base:
+    DEVELOPMENT_TEAM: ""          # your 10-character Apple Team ID (setup.sh fills this in)
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "5.0"
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+
+targets:
+  Lumina:
+    type: application
+    platform: iOS
+    sources:
+      - path: iOS
+        excludes:
+          - "Lumina.storekit"
+      - path: Shared
+      - path: iOS/Lumina.storekit
+        buildPhase: none
+    info:
+      path: iOS/Info.plist
+      properties:
+        CFBundleDisplayName: Lumina
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSApplicationCategoryType: public.app-category.healthcare-fitness
+        ITSAppUsesNonExemptEncryption: false
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        NSMicrophoneUsageDescription: Lumina uses the microphone so you can record affirmations in your own voice. Recordings stay on your iPhone.
+        NSHealthUpdateUsageDescription: Lumina saves your mindful minutes and mood check-ins to Apple Health when you turn this on.
+        NSHealthShareUsageDescription: Lumina does not read your health data. This permission is required by Apple to save mindful minutes and mood check-ins.
+        CFBundleURLTypes:
+          - CFBundleURLName: lumina
+            CFBundleURLSchemes:
+              - lumina
+    entitlements:
+      path: iOS/Lumina.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.luminamanifestation.lumina
+        com.apple.developer.healthkit: true
+        com.apple.developer.healthkit.access: []
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.luminamanifestation.lumina
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        TARGETED_DEVICE_FAMILY: "1"
+    dependencies:
+      - target: LuminaWidgets
+      - target: LuminaWatch
+        embed: true
+        codeSign: true
+        copy:
+          destination: productsDirectory
+          subpath: $(CONTENTS_FOLDER_PATH)/Watch
+
+  LuminaWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: iOSWidget
+      - path: Shared
+    info:
+      path: iOSWidget/Info.plist
+      properties:
+        CFBundleDisplayName: Lumina
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: iOSWidget/LuminaWidgets.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.luminamanifestation.lumina
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.luminamanifestation.lumina.widgets
+        TARGETED_DEVICE_FAMILY: "1"
+        SKIP_INSTALL: YES
+
+  LuminaWatch:
+    type: application
+    platform: watchOS
+    sources:
+      - path: Watch
+      - path: Shared
+    info:
+      path: Watch/Info.plist
+      properties:
+        CFBundleDisplayName: Lumina
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        WKApplication: true
+        WKCompanionAppBundleIdentifier: com.luminamanifestation.lumina
+        WKRunsIndependentlyOfCompanionApp: false
+    entitlements:
+      path: Watch/LuminaWatch.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.luminamanifestation.lumina
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.luminamanifestation.lumina.watchkitapp
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        TARGETED_DEVICE_FAMILY: "4"
+        SKIP_INSTALL: YES
+    dependencies:
+      - target: LuminaComplication
+
+  LuminaComplication:
+    type: app-extension
+    platform: watchOS
+    sources:
+      - path: WatchWidget
+      - path: Shared
+    info:
+      path: WatchWidget/Info.plist
+      properties:
+        CFBundleDisplayName: Lumina
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: WatchWidget/LuminaComplication.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.luminamanifestation.lumina
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.luminamanifestation.lumina.watchkitapp.complication
+        TARGETED_DEVICE_FAMILY: "4"
+        SKIP_INSTALL: YES
+
+schemes:
+  Lumina:
+    build:
+      targets:
+        Lumina: all
+        LuminaWidgets: all
+        LuminaWatch: all
+    run:
+      config: Debug
+      storeKitConfiguration: iOS/Lumina.storekit
+    archive:
+      config: Release
+  LuminaWatch:
+    build:
+      targets:
+        LuminaWatch: all
+    run:
+      config: Debug

@@ -1,0 +1,110 @@
+# Signs Lumina and sends it to App Store Connect (TestFlight), from a cloud Mac.
+# Start it by hand: GitHub → Actions → "Release to TestFlight" → Run workflow.
+#
+# Needs these repository secrets (Settings → Secrets and variables → Actions):
+#   APPLE_TEAM_ID      10-character Team ID (developer.apple.com → Account → Membership details)
+#   ASC_KEY_ID         App Store Connect API key ID
+#   ASC_ISSUER_ID      App Store Connect API issuer ID
+#   ASC_PRIVATE_KEY    The full text of the downloaded AuthKey_XXXX.p8 file
+# The API key needs the Admin role so the cloud Mac can create signing certificates.
+name: Release to TestFlight
+
+on:
+  workflow_dispatch:
+    inputs:
+      upload:
+        description: "Upload to App Store Connect (leave off for the very first run, which only registers the app's IDs with Apple)"
+        type: boolean
+        default: true
+
+jobs:
+  release:
+    runs-on: macos-26
+    timeout-minutes: 60
+    env:
+      TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+      BUILD_NUMBER: ${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check that the Apple secrets are set
+        run: |
+          missing=0
+          for name in TEAM_ID ASC_KEY_ID ASC_ISSUER_ID ASC_PRIVATE_KEY; do
+            if [ -z "${!name}" ]; then echo "::error::The secret for $name is missing. See PUBLISHING.md, step 4."; missing=1; fi
+          done
+          exit $missing
+
+      - name: Save the API key for Xcode
+        run: |
+          mkdir -p "$RUNNER_TEMP/keys"
+          printf '%s\n' "$ASC_PRIVATE_KEY" > "$RUNNER_TEMP/keys/AuthKey_${ASC_KEY_ID}.p8"
+          echo "KEY_PATH=$RUNNER_TEMP/keys/AuthKey_${ASC_KEY_ID}.p8" >> "$GITHUB_ENV"
+
+      - name: Install XcodeGen and generate the project
+        run: |
+          brew install xcodegen
+          xcodegen generate
+
+      - name: Archive (signs automatically with your Apple account)
+        run: |
+          xcodebuild archive \
+            -project Lumina.xcodeproj \
+            -scheme Lumina \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/Lumina.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$KEY_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            DEVELOPMENT_TEAM="$TEAM_ID" \
+            CODE_SIGN_STYLE=Automatic \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            > archive.log 2>&1 || {
+              echo "::group::Archive errors"
+              grep -E "(error|fatal error):" archive.log | sort -u | head -80
+              echo "::endgroup::"
+              tail -60 archive.log
+              exit 1
+            }
+          echo "Archived build $BUILD_NUMBER"
+
+      - name: Upload to App Store Connect
+        if: ${{ inputs.upload }}
+        run: |
+          sed "s/TEAM_ID_PLACEHOLDER/$TEAM_ID/" ci/ExportOptions.plist > "$RUNNER_TEMP/ExportOptions.plist"
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/Lumina.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$KEY_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            > export.log 2>&1 || {
+              echo "::group::Upload errors"
+              grep -iE "error" export.log | sort -u | head -60
+              echo "::endgroup::"
+              tail -60 export.log
+              exit 1
+            }
+          echo "::notice::Build $BUILD_NUMBER uploaded. It appears in App Store Connect → TestFlight after Apple finishes processing (usually 10–30 minutes)."
+
+      - name: Keep the logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-logs-${{ github.run_number }}
+          path: |
+            archive.log
+            export.log
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Remove the API key from the cloud Mac
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/keys"
