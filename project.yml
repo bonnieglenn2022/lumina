@@ -148,7 +148,7 @@ targets:
           - group.com.luminamanifestation.lumina
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.luminamanifestation.lumina.watchkitapp.complication
+        PRODUCT_BUNDLE_IDENTIFIER: com.luminamanifestation.lumina.watchkitapp.LuminaWatchWidget
         TARGETED_DEVICE_FAMILY: "4"
         SKIP_INSTALL: YES
 
