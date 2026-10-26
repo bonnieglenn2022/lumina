@@ -41,7 +41,7 @@ struct MyManifestationsView: View {
             HStack(alignment: .firstTextBaseline) {
                 SectionTitle(text: "Written by you")
                 Spacer()
-                if !store.isPremium {
+                if !appState.isPremium {
                     Text("\(appState.data.custom.count) of \(AppConfig.freeCustomLimit)")
                         .font(Theme.text(13))
                         .foregroundStyle(Theme.secondary)

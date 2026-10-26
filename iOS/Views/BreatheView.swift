@@ -109,7 +109,7 @@ struct BreatheView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(Soundscape.allCases) { s in
-                        let locked = !s.isFree && !store.isPremium
+                        let locked = !s.isFree && !appState.isPremium
                         Button {
                             if locked { showPaywall = true } else { soundscape = s; appState.data.soundscape = s }
                         } label: {

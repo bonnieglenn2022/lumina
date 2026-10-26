@@ -35,7 +35,7 @@ struct TodayView: View {
                         }
                         intentionCard
                         reminderRow
-                        if !store.isPremium {
+                        if !appState.isPremium {
                             PremiumBanner { showPaywall = true }
                                 .padding(.top, 4)
                         }

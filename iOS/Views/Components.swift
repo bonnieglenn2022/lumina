@@ -110,7 +110,7 @@ struct AffirmationCard: View {
                 action(voiceSymbol, label: hasVoice ? "Play your voice" : "Record in your voice", highlighted: hasVoice) {
                     if hasVoice {
                         voice.playingID == affirmation.id ? voice.stopPlayback() : voice.play(affirmation.id)
-                    } else if store.isPremium {
+                    } else if appState.isPremium {
                         showRecorder = true
                     } else {
                         showPaywall = true

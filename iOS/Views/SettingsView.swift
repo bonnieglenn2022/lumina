@@ -50,7 +50,7 @@ struct SettingsView: View {
 
     private var premiumSection: some View {
         Section {
-            if store.isPremium {
+            if appState.isPremium {
                 HStack(spacing: 14) {
                     LogoMark(size: 34)
                     VStack(alignment: .leading, spacing: 2) {
@@ -127,7 +127,7 @@ struct SettingsView: View {
         } header: {
             Text("Daily Reminders")
         } footer: {
-            Text(store.isPremium
+            Text(appState.isPremium
                  ? "Up to \(AppConfig.premiumReminderLimit) a day. Reminders also appear on your Apple Watch."
                  : "Free includes 1 reminder a day; Premium allows up to \(AppConfig.premiumReminderLimit). Reminders also appear on your Apple Watch.")
         }
@@ -173,7 +173,7 @@ struct SettingsView: View {
         Section("Sound") {
             Toggle("Chimes and reminder sound", isOn: $appState.data.soundsOn)
             Picker("Default soundscape", selection: $appState.data.soundscape) {
-                ForEach(Soundscape.allCases.filter { $0.isFree || store.isPremium }) { s in
+                ForEach(Soundscape.allCases.filter { $0.isFree || appState.isPremium }) { s in
                     Label(s.title, systemImage: s.symbol).tag(s)
                 }
             }

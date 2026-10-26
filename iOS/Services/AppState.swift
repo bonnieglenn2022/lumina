@@ -135,7 +135,7 @@ final class AppState: ObservableObject {
             Affirmation(id: "demo-1", text: "I am building a life I love, one calm morning at a time.", category: nil),
             Affirmation(id: "demo-2", text: "My business grows with ease and integrity.", category: nil)
         ]
-        d.favoriteIDs = ["demo-1", "abundance-3", "peace-0", "gratitude-5"]
+        d.favoriteIDs = ["abundance-3", "peace-0", "love-0", "gratitude-5"]
         d.streak = DemoMode.streak
         d.longestStreak = 21
         d.lastCheckIn = cal.date(byAdding: .day, value: -1, to: .now)
@@ -166,7 +166,7 @@ final class AppState: ObservableObject {
     }
 
     var greeting: String {
-        let hour = Calendar.current.component(.hour, from: clock)
+        let hour = DemoMode.isOn ? (DemoMode.evening ? 20 : 9) : Calendar.current.component(.hour, from: clock)
         let base = hour < 12 ? "Good morning" : (hour < 17 ? "Good afternoon" : "Good evening")
         return firstName.isEmpty ? base : "\(base), \(firstName)"
     }

@@ -68,7 +68,6 @@ jobs:
           shoot iphone-4-library    library   light NO
           shoot iphone-5-mine       mine      light NO
           shoot iphone-6-evening    today     dark  YES
-          shoot iphone-7-settings   settings  light NO
 
       - name: Take Apple Watch screenshot
         run: |

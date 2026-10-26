@@ -19,7 +19,7 @@ struct ThemePickerView: View {
                             .foregroundStyle(Theme.secondary)
                         LazyVGrid(columns: columns, spacing: 12) {
                             ForEach(CardTheme.all) { theme in
-                                let locked = !theme.isFree && !store.isPremium
+                                let locked = !theme.isFree && !appState.isPremium
                                 Button {
                                     if locked { showPaywall = true } else { appState.data.themeID = theme.id }
                                 } label: {
