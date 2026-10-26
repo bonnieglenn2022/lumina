@@ -17,8 +17,8 @@ enum AppConfig {
 
     // Required by App Review on any screen that sells a subscription.
     // Set these to the published support site before release (see PUBLISHING.md).
-    static let privacyURL = URL(string: "https://www.example.com/lumina/privacy")!
-    static let supportURL = URL(string: "https://www.example.com/lumina/support")!
+    static let privacyURL = URL(string: "https://bonnieglenn2022.github.io/lumina-site/privacy.html")!
+    static let supportURL = URL(string: "https://bonnieglenn2022.github.io/lumina-site/")!
     static let termsURL = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
 
     // Free vs Premium limits.
