@@ -64,12 +64,7 @@ jobs:
             DEVELOPMENT_TEAM="$TEAM_ID" \
             CODE_SIGN_STYLE=Automatic \
             CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
-            > archive.log 2>&1 || {
-              errors=$(grep -E "(error|fatal error|Provisioning|signing)" archive.log | sed "s#$PWD/##" | sort -u | head -40)
-              [ -n "$errors" ] || errors=$(tail -25 archive.log)
-              echo "::error title=Archive failed::$(printf '%s' "$errors" | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')"
-              exit 1
-            }
+            > archive.log 2>&1 || { ci/annotate.sh error "Archive failed" archive.log; exit 1; }
           echo "Archived build $BUILD_NUMBER"
 
       - name: Upload to App Store Connect
@@ -84,12 +79,7 @@ jobs:
             -authenticationKeyPath "$KEY_PATH" \
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
-            > export.log 2>&1 || {
-              errors=$(grep -iE "error" export.log | sort -u | head -40)
-              [ -n "$errors" ] || errors=$(tail -25 export.log)
-              echo "::error title=Upload failed::$(printf '%s' "$errors" | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')"
-              exit 1
-            }
+            > export.log 2>&1 || { ci/annotate.sh error "Upload failed" export.log; exit 1; }
           echo "::notice::Build $BUILD_NUMBER uploaded. It appears in App Store Connect → TestFlight after Apple finishes processing (usually 10–30 minutes)."
 
       - name: Keep the logs

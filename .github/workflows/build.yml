@@ -36,19 +36,15 @@ jobs:
             -configuration Debug \
             -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO \
-            > build.log 2>&1 || {
-              errors=$(grep -E "(error|fatal error):" build.log | sed "s#$PWD/##" | sort -u | head -40)
-              [ -n "$errors" ] || errors=$(tail -25 build.log)
-              echo "::error title=Build failed::$(printf '%s' "$errors" | sed ':a;N;$!ba;s/%/%25/g;s/\r/%0D/g;s/\n/%0A/g')"
-              exit 1
-            }
+            > build.log 2>&1 || { ci/annotate.sh error "Build failed" build.log; exit 1; }
           warnings=$(grep -E "warning:" build.log | sed "s#$PWD/##" | sort -u)
           files=$(grep -oE "(SwiftCompile|CompileSwift) [^ ]+ [^ ]+ [^ ]+\.swift" build.log | grep -oE "[A-Za-z]+\.swift" | sort -u | wc -l | tr -d ' ')
           products=$(grep -oE "[A-Za-z]+\.(app|appex)" build.log | sort -u | tr '\n' ' ')
           result=$(grep -oE "\*\* BUILD [A-Z]+ \*\*" build.log | tail -1)
           echo "::notice title=Build succeeded::$result | $files Swift files compiled | built: $products| $(printf '%s' "$warnings" | grep -c . || true) unique warnings"
           if [ -n "$warnings" ]; then
-            echo "::warning title=Compiler warnings::$(printf '%s' "$warnings" | head -30 | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')"
+            grep -E "warning:" build.log > warnings.log
+            ci/annotate.sh warning "Compiler warnings" warnings.log
           fi
 
       - name: Keep the build log
