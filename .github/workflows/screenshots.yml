@@ -1,0 +1,95 @@
+# Takes App Store screenshots on an iPhone 17 Pro Max (6.9") and an Apple Watch Series 11 (46mm)
+# simulator, using Lumina's demo mode. Start it by hand from the Actions tab.
+# The images are saved as a downloadable artifact and on the `screenshots` branch.
+name: Screenshots
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  screenshots:
+    runs-on: macos-26
+    timeout-minutes: 60
+    env:
+      APP_ID: com.luminamanifestation.lumina
+      WATCH_ID: com.luminamanifestation.lumina.watchkitapp
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate project
+        run: |
+          brew install xcodegen
+          xcodegen generate
+
+      - name: Create simulators
+        run: |
+          PHONE=$(xcrun simctl create shots-phone "iPhone 17 Pro Max")
+          WATCH=$(xcrun simctl create shots-watch "Apple Watch Series 11 (46mm)")
+          echo "PHONE=$PHONE" >> "$GITHUB_ENV"
+          echo "WATCH=$WATCH" >> "$GITHUB_ENV"
+          xcrun simctl boot "$PHONE"
+          xcrun simctl boot "$WATCH"
+          xcrun simctl bootstatus "$PHONE" -b
+          xcrun simctl bootstatus "$WATCH" -b
+
+      - name: Build for the simulators
+        run: |
+          xcodebuild build -project Lumina.xcodeproj -scheme Lumina -configuration Debug \
+            -destination "id=$PHONE" -derivedDataPath build CODE_SIGNING_ALLOWED=NO > phone-build.log 2>&1 \
+            || { ci/annotate.sh error "iPhone build failed" phone-build.log; exit 1; }
+          xcodebuild build -project Lumina.xcodeproj -scheme LuminaWatch -configuration Debug \
+            -destination "id=$WATCH" -derivedDataPath build CODE_SIGNING_ALLOWED=NO > watch-build.log 2>&1 \
+            || { ci/annotate.sh error "Watch build failed" watch-build.log; exit 1; }
+
+      - name: Take iPhone screenshots
+        run: |
+          mkdir -p shots
+          xcrun simctl status_bar "$PHONE" override --time "9:41" --dataNetwork wifi --wifiBars 3 \
+            --cellularMode active --cellularBars 4 --batteryState charged --batteryLevel 100
+          xcrun simctl install "$PHONE" build/Build/Products/Debug-iphonesimulator/Lumina.app
+
+          shoot() {  # shoot <file> <screen> <light|dark> <evening YES/NO>
+            xcrun simctl ui "$PHONE" appearance "$3"
+            xcrun simctl terminate "$PHONE" "$APP_ID" 2>/dev/null || true
+            xcrun simctl launch "$PHONE" "$APP_ID" -LuminaDemo -LuminaScreen "$2" -LuminaEvening "$4" > /dev/null
+            sleep 7
+            xcrun simctl io "$PHONE" screenshot --type=png "shots/$1.png"
+          }
+          shoot iphone-1-today      today     light NO
+          shoot iphone-2-winddown   winddown  dark  YES
+          shoot iphone-3-milestone  milestone light NO
+          shoot iphone-4-library    library   light NO
+          shoot iphone-5-mine       mine      light NO
+          shoot iphone-6-evening    today     dark  YES
+          shoot iphone-7-settings   settings  light NO
+
+      - name: Take Apple Watch screenshot
+        run: |
+          xcrun simctl install "$WATCH" build/Build/Products/Debug-watchsimulator/LuminaWatch.app
+          xcrun simctl launch "$WATCH" "$WATCH_ID" -LuminaDemo > /dev/null
+          sleep 8
+          xcrun simctl io "$WATCH" screenshot --type=png shots/watch-1-today.png
+
+      - name: List screenshots
+        run: |
+          for f in shots/*.png; do echo "$f $(sips -g pixelWidth -g pixelHeight "$f" | awk '/pixel/ {printf "%s ", $2}')"; done
+          echo "::notice title=Screenshots::$(ls shots | tr '\n' ' ')"
+
+      - name: Save as a download
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-store-screenshots
+          path: shots/
+
+      - name: Save to the screenshots branch
+        run: |
+          git config user.name "Lumina screenshots"
+          git config user.email "lumina@users.noreply.github.com"
+          git checkout --orphan screenshots
+          git rm -rfq --cached .
+          git add shots
+          git commit -qm "App Store screenshots from run ${{ github.run_number }}"
+          git push -f origin screenshots

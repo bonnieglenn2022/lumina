@@ -70,6 +70,16 @@ struct TodayView: View {
             .sheet(item: $milestone) { MilestoneView(days: $0.id) }
             .fullScreenCover(isPresented: $showBreathe) { BreatheView(mode: .breathe) }
             .fullScreenCover(isPresented: $showWindDown) { BreatheView(mode: .windDown) }
+            .task {
+                guard DemoMode.isOn else { return }
+                try? await Task.sleep(for: .milliseconds(600))
+                switch DemoMode.screen {
+                case "winddown": showWindDown = true
+                case "breathe": showBreathe = true
+                case "milestone": milestone = MilestoneItem(id: 30)
+                default: break
+                }
+            }
             .onChange(of: appState.pendingMilestone) { _, value in
                 if let value {
                     milestone = MilestoneItem(id: value)

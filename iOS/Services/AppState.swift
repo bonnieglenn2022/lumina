@@ -120,6 +120,34 @@ final class AppState: ObservableObject {
         } else {
             data = UserData()
         }
+        if DemoMode.isOn { applyDemo() }
+    }
+
+    /// Realistic sample state for App Store screenshots (screenshot job only).
+    private func applyDemo() {
+        var d = UserData()
+        let cal = Calendar.current
+        d.hasOnboarded = true
+        d.userName = DemoMode.name
+        d.focusAreas = [.gratitude, .confidence, .abundance, .peace]
+        d.reminders = [Reminder(hour: 7, minute: 30), Reminder(hour: 20, minute: 30)]
+        d.custom = [
+            Affirmation(id: "demo-1", text: "I am building a life I love, one calm morning at a time.", category: nil),
+            Affirmation(id: "demo-2", text: "My business grows with ease and integrity.", category: nil)
+        ]
+        d.favoriteIDs = ["demo-1", "abundance-3", "peace-0", "gratitude-5"]
+        d.streak = DemoMode.streak
+        d.longestStreak = 21
+        d.lastCheckIn = cal.date(byAdding: .day, value: -1, to: .now)
+        d.streakFreezes = 2
+        d.celebratedMilestone = 7
+        d.intention = "Show up with patience and warmth"
+        d.intentionDay = DailyPicker.dayNumber(for: .now)
+        d.themeID = DemoMode.screen == "library" ? "classic" : "moonlit"
+        d.appearance = .automatic
+        d.healthEnabled = true
+        d.widgetTipDismissed = true
+        data = d
     }
 
     // MARK: Today
@@ -128,7 +156,10 @@ final class AppState: ObservableObject {
         DailyPicker.pool(categories: data.focusAreas, isPremium: isPremium, custom: data.custom)
     }
 
-    var today: Affirmation { DailyPicker.affirmation(for: .now, pool: pool) }
+    var today: Affirmation {
+        if DemoMode.isOn, let demo = DemoMode.affirmation { return demo }
+        return DailyPicker.affirmation(for: .now, pool: pool)
+    }
 
     var firstName: String {
         data.userName.trimmingCharacters(in: .whitespacesAndNewlines).components(separatedBy: " ").first ?? ""
@@ -141,6 +172,7 @@ final class AppState: ObservableObject {
     }
 
     var isEvening: Bool {
+        if DemoMode.isOn { return DemoMode.evening }
         let hour = Calendar.current.component(.hour, from: clock)
         return hour >= 19 || hour < 5
     }

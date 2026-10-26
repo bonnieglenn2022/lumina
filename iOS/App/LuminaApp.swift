@@ -59,7 +59,7 @@ struct RootView: View {
         .animation(.easeInOut(duration: 0.5), value: appState.data.hasOnboarded)
         .preferredColorScheme(appState.preferredColorScheme)
         .onChange(of: store.isPremium, initial: true) { _, newValue in
-            appState.isPremium = newValue
+            appState.isPremium = DemoMode.isOn ? true : newValue
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {

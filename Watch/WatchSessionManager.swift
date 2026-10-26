@@ -10,7 +10,17 @@ final class WatchSessionManager: NSObject, ObservableObject, WCSessionDelegate {
     @Published private(set) var snapshot: WatchSnapshot
 
     override init() {
-        snapshot = WatchSnapshot.load()
+        if DemoMode.isOn, let demo = DemoMode.affirmation {
+            let day = DailyPicker.dayNumber(for: .now)
+            snapshot = WatchSnapshot(name: DemoMode.name,
+                                     week: [.init(day: day, text: demo.text, category: demo.categoryTitle)],
+                                     favorites: ["I am calm, centered, and grounded.", "I find something beautiful in every moment."],
+                                     streak: DemoMode.streak,
+                                     checkedInDay: -1,
+                                     themeID: "moonlit")
+        } else {
+            snapshot = WatchSnapshot.load()
+        }
         super.init()
         if WCSession.isSupported() {
             WCSession.default.delegate = self
