@@ -37,14 +37,16 @@ jobs:
             -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO \
             > build.log 2>&1 || {
-              echo "::group::Build errors"
-              grep -E "(error|fatal error):" build.log | sort -u | head -80
-              echo "::endgroup::"
-              tail -40 build.log
+              errors=$(grep -E "(error|fatal error):" build.log | sed "s#$PWD/##" | sort -u | head -40)
+              [ -n "$errors" ] || errors=$(tail -25 build.log)
+              echo "::error title=Build failed::$(printf '%s' "$errors" | sed ':a;N;$!ba;s/%/%25/g;s/\r/%0D/g;s/\n/%0A/g')"
               exit 1
             }
-          echo "Build succeeded"
-          grep -cE "warning:" build.log | xargs echo "Warnings:"
+          warnings=$(grep -E "warning:" build.log | sed "s#$PWD/##" | sort -u)
+          echo "::notice title=Build succeeded::$(printf '%s' "$warnings" | grep -c . || true) unique warnings"
+          if [ -n "$warnings" ]; then
+            echo "::warning title=Compiler warnings::$(printf '%s' "$warnings" | head -30 | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')"
+          fi
 
       - name: Keep the build log
         if: always()

@@ -65,10 +65,9 @@ jobs:
             CODE_SIGN_STYLE=Automatic \
             CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
             > archive.log 2>&1 || {
-              echo "::group::Archive errors"
-              grep -E "(error|fatal error):" archive.log | sort -u | head -80
-              echo "::endgroup::"
-              tail -60 archive.log
+              errors=$(grep -E "(error|fatal error|Provisioning|signing)" archive.log | sed "s#$PWD/##" | sort -u | head -40)
+              [ -n "$errors" ] || errors=$(tail -25 archive.log)
+              echo "::error title=Archive failed::$(printf '%s' "$errors" | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')"
               exit 1
             }
           echo "Archived build $BUILD_NUMBER"
@@ -86,10 +85,9 @@ jobs:
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
             > export.log 2>&1 || {
-              echo "::group::Upload errors"
-              grep -iE "error" export.log | sort -u | head -60
-              echo "::endgroup::"
-              tail -60 export.log
+              errors=$(grep -iE "error" export.log | sort -u | head -40)
+              [ -n "$errors" ] || errors=$(tail -25 export.log)
+              echo "::error title=Upload failed::$(printf '%s' "$errors" | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')"
               exit 1
             }
           echo "::notice::Build $BUILD_NUMBER uploaded. It appears in App Store Connect → TestFlight after Apple finishes processing (usually 10–30 minutes)."
