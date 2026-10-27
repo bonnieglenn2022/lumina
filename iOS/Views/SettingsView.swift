@@ -257,6 +257,7 @@ struct SettingsView: View {
             }
             Button("Rate Lumina") { requestReview() }
             Link("Help & Support", destination: AppConfig.supportURL)
+            Link("Email Us", destination: AppConfig.supportMailURL)
             Link("Privacy Policy", destination: AppConfig.privacyURL)
             Link("Terms of Use", destination: AppConfig.termsURL)
         }
