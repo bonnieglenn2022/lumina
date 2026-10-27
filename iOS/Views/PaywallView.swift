@@ -133,7 +133,14 @@ struct PaywallView: View {
 
     @ViewBuilder
     private var plans: some View {
-        if store.products.isEmpty {
+        if store.products.isEmpty && DemoMode.isOn {
+            // Screenshot mode only: the simulator can't load App Store prices, so show the real ones as text.
+            VStack(spacing: 10) {
+                demoRow("Yearly", "$3.75 / month, 7 days free", "$44.99 / yr", save: "Save 46%", selected: true)
+                demoRow("Monthly", "7 days free, cancel anytime", "$6.99 / mo", save: nil, selected: false)
+                demoRow("Lifetime", "Pay once, keep forever", "$99.99", save: nil, selected: false)
+            }
+        } else if store.products.isEmpty {
             HStack {
                 Spacer()
                 ProgressView()
@@ -194,6 +201,33 @@ struct PaywallView: View {
         .sensoryFeedback(.selection, trigger: selectedID)
     }
 
+    private func demoRow(_ title: String, _ detail: String, _ price: String, save: String?, selected: Bool) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: selected ? "largecircle.fill.circle" : "circle")
+                .font(.system(size: 22))
+                .foregroundStyle(selected ? Theme.accent : Theme.hairline)
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 8) {
+                    Text(title).font(Theme.text(17, weight: .semibold)).foregroundStyle(Theme.ink)
+                    if let save {
+                        Text(save)
+                            .font(Theme.text(12, weight: .semibold))
+                            .foregroundStyle(Theme.accent)
+                            .padding(.horizontal, 8).padding(.vertical, 3)
+                            .background(Capsule().fill(Theme.accentSoft))
+                    }
+                }
+                Text(detail).font(Theme.text(14)).foregroundStyle(Theme.secondary)
+            }
+            Spacer()
+            Text(price).font(Theme.text(16, weight: .semibold)).foregroundStyle(Theme.ink).monospacedDigit()
+        }
+        .padding(18)
+        .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(Theme.surface))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
+            .strokeBorder(selected ? Theme.accent : Theme.hairline, lineWidth: selected ? 2 : 0.5))
+    }
+
     private var bottomBar: some View {
         VStack(spacing: 12) {
             Button {
@@ -206,7 +240,7 @@ struct PaywallView: View {
                 }
             }
             .buttonStyle(PrimaryButtonStyle())
-            .disabled(selected == nil || isPurchasing)
+            .disabled((selected == nil && !DemoMode.isOn) || isPurchasing)
 
             finePrint
 
@@ -227,7 +261,9 @@ struct PaywallView: View {
 
     private var finePrint: some View {
         Group {
-            if let product = selected {
+            if selected == nil && DemoMode.isOn {
+                Text("Free for 7 days, then $44.99/year. Charged to your Apple ID when the trial ends. Renews automatically unless canceled at least 24 hours before the period ends. Cancel anytime in Settings.")
+            } else if let product = selected {
                 if product.isLifetime {
                     Text("One-time purchase of \(product.displayPrice). No subscription, no renewals. Yours forever on this Apple ID.")
                 } else if trialEligible {

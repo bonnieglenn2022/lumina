@@ -68,6 +68,7 @@ jobs:
           shoot iphone-4-library    library   light NO
           shoot iphone-5-mine       mine      light NO
           shoot iphone-6-evening    today     dark  YES
+          shoot review-premium      paywall   light NO
 
       - name: Take Apple Watch screenshot
         run: |

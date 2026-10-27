@@ -77,6 +77,7 @@ struct TodayView: View {
                 case "winddown": showWindDown = true
                 case "breathe": showBreathe = true
                 case "milestone": milestone = MilestoneItem(id: 30)
+                case "paywall": showPaywall = true
                 default: break
                 }
             }
