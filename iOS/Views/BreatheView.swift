@@ -127,22 +127,31 @@ struct BreatheView: View {
 
             HStack(spacing: 8) {
                 ForEach(mode == .windDown ? [5, 10, 15] : [1, 3, 5], id: \.self) { m in
-                    Button("\(m) min") { minutes = m }
-                        .font(Theme.text(14, weight: .semibold))
-                        .foregroundStyle(minutes == m ? Theme.navy : Theme.cream)
-                        .frame(maxWidth: .infinity).frame(height: 40)
-                        .background(Capsule().fill(minutes == m ? Theme.cream : .white.opacity(0.10)))
+                    Button { minutes = m } label: {
+                        Text("\(m) min")
+                            .font(Theme.text(14, weight: .semibold))
+                            .foregroundStyle(minutes == m ? Theme.navy : Theme.cream)
+                            .frame(maxWidth: .infinity).frame(height: 40)
+                            .background(Capsule().fill(minutes == m ? Theme.cream : .white.opacity(0.10)))
+                            .contentShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
                 }
             }
             .padding(.horizontal, 24)
 
-            Button(finished ? "Again" : "Begin") { start() }
-                .font(Theme.text(17, weight: .semibold))
-                .foregroundStyle(Theme.navy)
-                .frame(maxWidth: .infinity).frame(height: 54)
-                .background(Capsule().fill(Theme.cream))
-                .padding(.horizontal, 24)
-                .padding(.bottom, 24)
+            Button { start() } label: {
+                Text(finished ? "Again" : "Begin")
+                    .font(Theme.text(17, weight: .semibold))
+                    .foregroundStyle(Theme.navy)
+                    .frame(maxWidth: .infinity).frame(height: 54)
+                    .background(Capsule().fill(Theme.cream))
+                    .contentShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 24)
+            .padding(.bottom, 24)
+            .sensoryFeedback(.impact(weight: .medium), trigger: running)
         }
     }
 

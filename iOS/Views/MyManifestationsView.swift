@@ -150,15 +150,19 @@ struct ComposeView: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
                             ForEach(starters, id: \.self) { starter in
-                                Button(starter.trimmingCharacters(in: .whitespaces) + "…") {
+                                Button {
                                     text = starter
                                     focused = true
+                                } label: {
+                                    Text(starter.trimmingCharacters(in: .whitespaces) + "…")
+                                        .font(Theme.text(14, weight: .medium))
+                                        .foregroundStyle(Theme.ink)
+                                        .padding(.horizontal, 14).padding(.vertical, 8)
+                                        .background(Capsule().fill(Theme.surface))
+                                        .overlay(Capsule().strokeBorder(Theme.hairline, lineWidth: 0.5))
+                                        .contentShape(Capsule())
                                 }
-                                .font(Theme.text(14, weight: .medium))
-                                .foregroundStyle(Theme.ink)
-                                .padding(.horizontal, 14).padding(.vertical, 8)
-                                .background(Capsule().fill(Theme.surface))
-                                .overlay(Capsule().strokeBorder(Theme.hairline, lineWidth: 0.5))
+                                .buttonStyle(.plain)
                             }
                         }
                     }
