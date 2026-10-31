@@ -9,6 +9,7 @@ final class StoreManager: ObservableObject {
     @Published private(set) var isPremium = false
     @Published private(set) var isInTrial = false
     @Published private(set) var isLoading = false
+    @Published private(set) var loadFailed = false
 
     private var updatesTask: Task<Void, Never>?
 
@@ -36,13 +37,17 @@ final class StoreManager: ObservableObject {
     func loadProducts() async {
         guard products.isEmpty, !isLoading else { return }
         isLoading = true
+        loadFailed = false
         defer { isLoading = false }
         do {
             let fetched = try await Product.products(for: AppConfig.allProductIDs)
             let order = AppConfig.allProductIDs
             products = fetched.sorted { (order.firstIndex(of: $0.id) ?? 9) < (order.firstIndex(of: $1.id) ?? 9) }
+            // An empty answer means the App Store has no sellable products for these IDs yet.
+            loadFailed = products.isEmpty
         } catch {
             print("Lumina: failed to load products – \(error)")
+            loadFailed = true
         }
     }
 

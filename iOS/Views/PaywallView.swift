@@ -140,6 +140,32 @@ struct PaywallView: View {
                 demoRow("Monthly", "7 days free, cancel anytime", "$6.99 / mo", save: nil, selected: false)
                 demoRow("Lifetime", "Pay once, keep forever", "$99.99", save: nil, selected: false)
             }
+        } else if store.products.isEmpty && store.loadFailed {
+            VStack(spacing: 12) {
+                Text("Prices couldn't load right now.")
+                    .font(Theme.text(16, weight: .semibold))
+                    .foregroundStyle(Theme.ink)
+                Text("Check your internet connection and try again.")
+                    .font(Theme.text(14))
+                    .foregroundStyle(Theme.secondary)
+                    .multilineTextAlignment(.center)
+                Button {
+                    Task {
+                        await store.loadProducts()
+                        trialEligible = await store.isTrialEligible(for: store.yearly ?? store.products.first)
+                    }
+                } label: {
+                    Text("Try Again")
+                        .font(Theme.text(15, weight: .semibold))
+                        .foregroundStyle(Theme.accent)
+                        .padding(.horizontal, 20).padding(.vertical, 10)
+                        .background(Capsule().fill(Theme.accentSoft))
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(minHeight: 140)
         } else if store.products.isEmpty {
             HStack {
                 Spacer()
